@@ -32,21 +32,12 @@ jobs:
           grep -qi "<body" index.html
           echo "Validacion exitosa"
 
-  # ETAPA 2: DESPLIEGUE CONTINUO (CD)
-  despliegue:
-    name: Publicar aplicacion
+  # ETAPA 2: EMPAQUETADO (BUILD)
+  empaquetar:
+    name: Preparar aplicacion
     needs: integracion
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Descargar codigo
@@ -55,11 +46,26 @@ jobs:
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
 
-      - name: Preparar archivos para publicar
+      - name: Subir archivos para publicar
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
 
+  # ETAPA 3: DESPLIEGUE CONTINUO (CD)
+  despliegue:
+    name: Publicar aplicacion
+    needs: empaquetar
+    runs-on: ubuntu-latest
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Desplegar aplicacion
         id: deployment
         uses: actions/deploy-pages@v4
